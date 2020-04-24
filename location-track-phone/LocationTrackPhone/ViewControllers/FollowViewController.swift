@@ -71,7 +71,34 @@ class FollowViewController: UIViewController {
   // MARK: Updates
   
   func startSocket() {
-    print("Insert web socket code here!")
+    // 1
+    let ws = WebSocket("ws://\(host)/listen/\(session.id)")
+
+    // 2
+    ws.event.close = { [weak self] code, reason, clean in
+      self?.navigationController?
+        .popToRootViewController(animated: true)
+    }
+
+    // 3
+    ws.event.message = { [weak self] message in
+      guard let bytes = message as? [UInt8] else {
+        fatalError("invalid data")
+      }
+      let data = Data(bytes: bytes)
+      let decoder = JSONDecoder()
+      do {
+        // 4
+        let location = try decoder.decode(
+          Location.self,
+          from: data
+        )
+        // 5
+        self?.focusMapView(location: location)
+      } catch {
+        print("decoding error: \(error)")
+      }
+    }
   }
   
   func focusMapView(location: Location) {
